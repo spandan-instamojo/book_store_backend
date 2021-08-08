@@ -45,11 +45,10 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
-class ForgotPasswordSerializer(serializers.Serializer):
+class UserVerificationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=20, required=True, allow_null=False, allow_blank=False)
     hq_id = serializers.IntegerField(allow_null=False, required=True)
     hint_answer = serializers.CharField(max_length=30, required=True, allow_null=False, allow_blank=False)
-    new_password = serializers.CharField(max_length=100, required=True, allow_null=False, allow_blank=False)
 
     def validate(self, attrs):
         username = attrs['username']
@@ -63,10 +62,24 @@ class ForgotPasswordSerializer(serializers.Serializer):
             if user.hint_question.id == hq_id:
                 if user.hint_answer != hint_answer:
                     raise serializers.ValidationError('Incorrect Answer')
-                else:
-                    attrs['readable_password'] = attrs['new_password']
-                    attrs['password'] = make_password(attrs['new_password'])
             else:
                 raise serializers.ValidationError('Invalid user/hint-question')
+        return attrs
+
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=20, required=True, allow_null=False, allow_blank=False)
+    new_password = serializers.CharField(max_length=100, required=True, allow_null=False, allow_blank=False)
+
+    def validate(self, attrs):
+        username = attrs['username']
+        try:
+            user = StoreUser.objects.get(username=username)
+        except StoreUser.DoesNotExist:
+            raise serializers.ValidationError('Username does not exist')
+        else:
+            attrs['readable_password'] = attrs['new_password']
+            attrs['password'] = make_password(attrs['new_password'])
 
         return attrs

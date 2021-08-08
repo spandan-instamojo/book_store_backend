@@ -6,7 +6,8 @@ from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from .models import StoreUser, HintQuestion
-from .serializers import RegistrationSerializer, LoginSerializer, ForgotPasswordSerializer, HintSerializer
+from .serializers import RegistrationSerializer, LoginSerializer, HintSerializer, \
+    UserVerificationSerializer, ResetPasswordSerializer
 from .helpers import JWTAuthenticationGenerator, update_session_in_response
 
 
@@ -63,10 +64,18 @@ class UserLogin(views.APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ForgotPasswordView(views.APIView):
+class UserVerification(views.APIView):
 
     def post(self, request, *args, **kwargs):
-        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer = UserVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(views.APIView):
+
+    def post(self, request, *args, **kwargs):
+        serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
             storeUser = StoreUser.objects.get(username=serializer.validated_data.get('username'))
             storeUser.password = serializer.validated_data.get('password')
